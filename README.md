@@ -1,6 +1,6 @@
 ## chain.py
 
-Put the [chain.py](chain.py) file to your project.
+Put the [chain.py](chain.py) file and [chain.pyi](chain.pyi) (for auto completion) to your project.
 
 ```py
 from chain import chain, it
