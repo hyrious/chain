@@ -4,6 +4,7 @@
 import inspect
 import builtins
 
+__all__ = ["chain", "it"]
 
 # TODO: fill other magic methods like __bool__
 class chain:
@@ -39,16 +40,41 @@ class It:
     def __init__(self, x="x"):
         self.x = x
 
+    def __call__(self, x):
+        return eval(self.x)
+
     def __gt__(self, y):
         return It(f"({self.x}) > {y}")
+
+    def __lt__(self, y):
+        return It(f"({self.x}) < {y}")
+
+    def __ge__(self, y):
+        return It(f"({self.x}) >= {y}")
+
+    def __le__(self, y):
+        return It(f"({self.x}) <= {y}")
+
+    def __eq__(self, y):
+        return It(f"({self.x}) == {y}")
+
+    def __ne__(self, y):
+        return It(f"({self.x}) != {y}")
+
+    def __add__(self, y):
+        return It(f"({self.x}) + {y}")
+
+    def __sub__(self, y):
+        return It(f"({self.x}) - {y}")
 
     def __mul__(self, y):
         return It(f"({self.x}) * {y}")
 
-    def __call__(self, x):
-        return eval(self.x)
+    def __pow__(self, y):
+        return It(f"({self.x}) ** {y}")
 
 
 it = It()
-
-chain(range(10)).filter(it > 3).map(it * 2).to_list().print()
+if __name__ == "__main__":
+    chain(range(10)).filter(it > 3).map(it + 2).to_list().print()
+    chain([1, 2, 3, 4, 5, 9, 10]).to_tuple().filter(it == 5).to_list().print()
