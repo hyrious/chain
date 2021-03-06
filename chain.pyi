@@ -32,4 +32,10 @@ class It:
     # add magic methods
 
 it: It = It()
+
+class Slot(It):
+    pass
+
+slot: Slot = Slot()
+
 # this pyi is used to add auto completion

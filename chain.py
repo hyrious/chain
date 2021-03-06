@@ -14,17 +14,31 @@ class chain:
     def __repr__(self):
         return repr(self.obj)
 
+    def __iter__(self):
+        return iter(self.obj)
+
+    def __bool__(self):
+        return bool(self.obj)
+
     def __getattr__(self, name):
         if hasattr(self.obj, name):
             return getattr(self.obj, name)
         elif (
-            name.startswith("to_")
-            and callable(value := getattr(builtins, name[3:]))
-            or callable(value := getattr(builtins, name))
+            name.startswith("to_") and callable(value := getattr(builtins, name[3:]))
+            or                         callable(value := getattr(builtins, name))
         ):
 
-            def wrapped(*args, **kwargs):
-                if len(args) > 0 and callable(args[0]):
+            def wrapped(*_args, **kwargs):
+                args, has_slot = [], False
+                for arg in _args:
+                    if isinstance(arg, Slot):
+                        has_slot = True
+                        args.append(arg(self.obj))
+                    else:
+                        args.append(arg)
+                if has_slot:
+                    return chain(value(*args, **kwargs))
+                elif len(args) > 0 and callable(args[0]):
                     f, *rest = args
                     return chain(value(f, self.obj, *rest, **kwargs))
                 else:
@@ -44,37 +58,47 @@ class It:
         return eval(self.x)
 
     def __gt__(self, y):
-        return It(f"({self.x}) > {y}")
+        return type(self)(f"({self.x}) > {y}")
 
     def __lt__(self, y):
-        return It(f"({self.x}) < {y}")
+        return type(self)(f"({self.x}) < {y}")
 
     def __ge__(self, y):
-        return It(f"({self.x}) >= {y}")
+        return type(self)(f"({self.x}) >= {y}")
 
     def __le__(self, y):
-        return It(f"({self.x}) <= {y}")
+        return type(self)(f"({self.x}) <= {y}")
 
     def __eq__(self, y):
-        return It(f"({self.x}) == {y}")
+        return type(self)(f"({self.x}) == {y}")
 
     def __ne__(self, y):
-        return It(f"({self.x}) != {y}")
+        return type(self)(f"({self.x}) != {y}")
 
     def __add__(self, y):
-        return It(f"({self.x}) + {y}")
+        return type(self)(f"({self.x}) + {y}")
 
     def __sub__(self, y):
-        return It(f"({self.x}) - {y}")
+        return type(self)(f"({self.x}) - {y}")
 
     def __mul__(self, y):
-        return It(f"({self.x}) * {y}")
+        return type(self)(f"({self.x}) * {y}")
 
     def __pow__(self, y):
-        return It(f"({self.x}) ** {y}")
+        return type(self)(f"({self.x}) ** {y}")
 
 
 it = It()
+
+
+class Slot(It):
+    pass
+
+
+slot = Slot()
+
+
 if __name__ == "__main__":
     chain(range(10)).filter(it > 3).map(it + 2).to_list().print()
     chain([1, 2, 3, 4, 5, 9, 10]).to_tuple().filter(it == 5).to_list().print()
+    chain([1, 2, 3]).map(it ** 2, slot + [1, 2]).to_list().print()
