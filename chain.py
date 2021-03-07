@@ -4,7 +4,7 @@
 import inspect
 import builtins
 
-__all__ = ["chain", "it"]
+__all__ = ["chain", "it", "slot"]
 
 # TODO: fill other magic methods like __bool__
 class chain:
@@ -23,10 +23,19 @@ class chain:
     def __getattr__(self, name):
         if hasattr(self.obj, name):
             return getattr(self.obj, name)
-        elif (
-            name.startswith("to_") and callable(value := getattr(builtins, name[3:]))
-            or                         callable(value := getattr(builtins, name))
-        ):
+        else:
+            value, g = None, globals()
+
+            if name.startswith("to_"):
+                kname = name[3:]
+                value = value or getattr(builtins, kname, None)
+                value = value or (g[kname] if kname in g else None)
+
+            value = value or getattr(builtins, name, None)
+            value = value or (g[name] if name in g else None)
+
+            if not value:
+                return getattr(self.obj, name)
 
             def wrapped(*_args, **kwargs):
                 args, has_slot = [], False
@@ -45,8 +54,9 @@ class chain:
                     return chain(value(self.obj, *args, **kwargs))
 
             return wrapped
-        else:
-            return getattr(self.obj, name)
+
+    def slot(self, *args, **kwargs):
+        return chain(self.obj(*args, **kwargs))
 
 
 # TODO: rewrite It with class Expr :p
@@ -102,3 +112,10 @@ if __name__ == "__main__":
     chain(range(10)).filter(it > 3).map(it + 2).to_list().print()
     chain([1, 2, 3, 4, 5, 9, 10]).to_tuple().filter(it == 5).to_list().print()
     chain([1, 2, 3]).map(it ** 2, slot + [1, 2]).to_list().print()
+
+    from operator import add
+    from functools import reduce
+
+    chain([1, 2, 3]).add([4, 54, 6], slot).reduce(add, slot).print()
+
+    chain(add).slot(1, 2).print()
